@@ -7,6 +7,7 @@ __pycache__/
 
 # Runtime artifacts
 /output/
+/outputs/
 /raw_motion_npy/
 /data/output/
 *.log
