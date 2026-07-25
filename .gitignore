@@ -1,0 +1,29 @@
+# Local editor and Python caches
+.vscode/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Runtime artifacts
+/output/
+/raw_motion_npy/
+/data/output/
+*.log
+*.bak_*
+
+# Pretrained models are too large for regular GitHub storage and some are
+# distributed under their own licences. See GVHMR/docs/INSTALL.md.
+/inputs/checkpoints/
+/GVHMR/inputs/
+/data/smpl/**/*.pkl
+
+# Expanded source trees are kept; their downloaded archives are redundant.
+/*.zip
+
+# Local environment probe artifacts
+/PyTorch版本：
+/CUDA可用：
+
+# Preserve a local backup when flattening the bundled GVHMR repository.
+/GVHMR/.git-upstream/

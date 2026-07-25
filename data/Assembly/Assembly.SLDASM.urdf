@@ -1,0 +1,1463 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="Assembly.SLDASM">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0252292774223714 -2.12343281215782E-06 0.0227953230045784"
+        rpy="0 0 0" />
+      <mass
+        value="0.0496808845741031" />
+      <inertia
+        ixx="9.05972920334941E-06"
+        ixy="1.95215446323231E-09"
+        ixz="2.83841901040333E-06"
+        iyy="3.10966148472172E-05"
+        iyz="-3.16119936317111E-10"
+        izz="3.58987842393059E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="left_hip_linkage">
+    <inertial>
+      <origin
+        xyz="-0.00126759955992586 0.00593240044007416 -0.011"
+        rpy="0 0 0" />
+      <mass
+        value="0.000937741282929013" />
+      <inertia
+        ixx="5.53188029852908E-08"
+        ixy="1.50677079955003E-09"
+        ixz="-9.16725475355425E-09"
+        iyy="5.53188029852908E-08"
+        iyz="9.16725475355426E-09"
+        izz="1.74258449158426E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_hip_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_hip_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_hip_pitch_joint" type="revolute">
+    <origin xyz="0 0.0203 0.0111" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="left_hip_linkage" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3" upper="3" effort="100" velocity="3.0" />
+  </joint>
+  <link
+    name="left_thigh">
+    <inertial>
+      <origin
+        xyz="0.000466885688312428 -0.00591492168427693 -0.0271003493526129"
+        rpy="0 0 0" />
+      <mass
+        value="0.0312960030582504" />
+      <inertia
+        ixx="8.64927278670651E-06"
+        ixy="-6.05399858451662E-09"
+        ixz="-5.91447992983533E-08"
+        iyy="7.63614659251016E-06"
+        iyz="-3.74830415723264E-08"
+        izz="1.83202656500482E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_thigh.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_thigh.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_hip_roll_joint" type="revolute">
+    <origin xyz="-0.000399999999999994 0.00720000000000001 -0.022" rpy="0 0 0" />
+    <parent link="left_hip_linkage" />
+    <child link="left_thigh" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-3" upper="3" effort="100" velocity="3.0" />
+  </joint>
+  <link
+    name="left_knee_linkage">
+    <inertial>
+      <origin
+        xyz="5.88841523930378E-06 -0.00193019307900266 -0.0126177671310807"
+        rpy="0 0 0" />
+      <mass
+        value="0.000512959919910399" />
+      <inertia
+        ixx="2.11815480290007E-08"
+        ixy="-5.83018874764198E-12"
+        ixz="-1.39480626367027E-11"
+        iyy="1.90152370264939E-08"
+        iyz="-4.4290667340227E-09"
+        izz="6.67680880574231E-09" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_knee_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.874509803921569 0.435294117647059 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_knee_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_hip_yaw_joint" type="revolute">
+    <origin xyz="0.000399999999999999 -0.00950000000000001 -0.0597" rpy="0 0 0" />
+    <parent link="left_thigh" />
+    <child link="left_knee_linkage" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3" upper="3" effort="80" velocity="3.0" />
+  </joint>
+  <link
+    name="left_calf">
+    <inertial>
+      <origin
+        xyz="-6.06905177828743E-07 0.000730443523892822 -0.0225990986425835"
+        rpy="0 0 0" />
+      <mass
+        value="0.00880489370590337" />
+      <inertia
+        ixx="1.07211447974107E-06"
+        ixy="-3.19027527447193E-12"
+        ixz="-7.55962854995293E-10"
+        iyy="1.12301906905259E-06"
+        iyz="-3.06692734181306E-08"
+        izz="2.382687004963E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_calf.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_calf.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_knee_pitch_joint" type="revolute">
+    <origin xyz="0 -0.00039999999999997 -0.0227499999999999" rpy="0 0 0" />
+    <parent link="left_knee_linkage" />
+    <child link="left_calf" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3" upper="3" effort="80" velocity="3.0" />
+  </joint>
+  <link
+    name="left_ankle">
+    <inertial>
+      <origin
+        xyz="3.21974739404818E-09 -0.000336799630359395 -0.0435184894346107"
+        rpy="0 0 0" />
+      <mass
+        value="0.00664297246110663" />
+      <inertia
+        ixx="1.24788294245777E-06"
+        ixy="1.21584926630045E-15"
+        ixz="6.01414561603579E-10"
+        iyy="1.30801942459844E-06"
+        iyz="-3.55869389467505E-08"
+        izz="2.13880003549234E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_ankle.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_ankle.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_ankle_yaw_joint" type="revolute">
+    <origin xyz="0 0.000400000000000001 -0.05" rpy="0 0 0" />
+    <parent link="left_calf" />
+    <child link="left_ankle" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="60" velocity="3.0" />
+  </joint>
+  <link
+    name="left_foot">
+    <inertial>
+      <origin
+        xyz="0.0143649705309021 -0.000348712756951631 -0.0148347133975043"
+        rpy="0 0 0" />
+      <mass
+        value="0.0228603838478806" />
+      <inertia
+        ixx="1.25249609478426E-06"
+        ixy="1.20352530278603E-08"
+        ixz="-2.13314988234583E-08"
+        iyy="5.69928867508322E-06"
+        iyz="-2.4750699966228E-08"
+        izz="5.49783007651954E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_foot.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_foot.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_ankle_pitch_joint" type="revolute">
+    <origin xyz="0 0.000399999999999963 -0.0605000000000001" rpy="0 0 0" />
+    <parent link="left_ankle" />
+    <child link="left_foot" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.14" upper="3.14" effort="60" velocity="3.0" />
+  </joint>
+  <link
+    name="right_hip_linkage">
+    <inertial>
+      <origin
+        xyz="-0.00126759955992586 -0.00593240044007414 -0.011"
+        rpy="0 0 0" />
+      <mass
+        value="0.000937741282929013" />
+      <inertia
+        ixx="5.53188029852909E-08"
+        ixy="-1.50677079955003E-09"
+        ixz="-9.16725475355427E-09"
+        iyy="5.53188029852909E-08"
+        iyz="-9.16725475355427E-09"
+        izz="1.74258449158426E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_hip_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_hip_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_hip_pitch_joint" type="revolute">
+    <origin xyz="0 -0.0203 0.0111" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="right_hip_linkage" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="3.0" />
+  </joint>
+  <link
+    name="right_thigh">
+    <inertial>
+      <origin
+        xyz="0.000539957361432674 0.00592362624718607 -0.0270849836772038"
+        rpy="0 0 0" />
+      <mass
+        value="0.0310355640069977" />
+      <inertia
+        ixx="8.55353516448833E-06"
+        ixy="8.06204063134086E-09"
+        ixz="-6.29371305785741E-08"
+        iyy="7.54962029463389E-06"
+        iyz="2.26673566590813E-08"
+        izz="1.82122213487332E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_thigh.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_thigh.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_hip_roll_joint" type="revolute">
+    <origin xyz="-0.00040000000036682 -0.00720000000024454 -0.022" rpy="0 0 0" />
+    <parent link="right_hip_linkage" />
+    <child link="right_thigh" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-3.14" upper="3.14" effort="100" velocity="3.0" />
+  </joint>
+  <link
+    name="right_knee_linkage">
+    <inertial>
+      <origin
+        xyz="-0.00126759955955907 -0.00823240043982961 0.0707"
+        rpy="0 0 0" />
+      <mass
+        value="0.000937741282929013" />
+      <inertia
+        ixx="5.53188029852909E-08"
+        ixy="-1.50677079955002E-09"
+        ixz="-9.16725475355426E-09"
+        iyy="5.53188029852909E-08"
+        iyz="-9.16725475355427E-09"
+        izz="1.74258449158426E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_knee_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_knee_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_hip_yaw_joint" type="revolute">
+    <origin xyz="0.000400000000000005 0.0095 -0.0597" rpy="0 0 0" />
+    <parent link="right_thigh" />
+    <child link="right_knee_linkage" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="80" velocity="3.0" />
+  </joint>
+  <link
+    name="right_calf">
+    <inertial>
+      <origin
+        xyz="6.06905177827008E-07 -0.000730443523892819 -0.0225990986425835"
+        rpy="0 0 0" />
+      <mass
+        value="0.00880489370590338" />
+      <inertia
+        ixx="1.07211447974108E-06"
+        ixy="-3.19027527450539E-12"
+        ixz="7.5596285499507E-10"
+        iyy="1.1230190690526E-06"
+        iyz="3.06692734181307E-08"
+        izz="2.382687004963E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_calf.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_calf.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_knee_pitch_joint" type="revolute">
+    <origin xyz="0 0.000400000000244573 -0.0227499999999999" rpy="0 0 0" />
+    <parent link="right_knee_linkage" />
+    <child link="right_calf" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3.14" upper="3.14" effort="80" velocity="3.0" />
+  </joint>
+  <link
+    name="right_ankle">
+    <inertial>
+      <origin
+        xyz="-3.2199919536291E-09 0.000336799630196272 -0.0435184894346107"
+        rpy="0 0 0" />
+      <mass
+        value="0.00664297246110664" />
+      <inertia
+        ixx="1.24788294245777E-06"
+        ixy="1.21584928295563E-15"
+        ixz="-6.01414561602808E-10"
+        iyy="1.30801942459844E-06"
+        iyz="3.558693894675E-08"
+        izz="2.13880003549234E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_ankle.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_ankle.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_ankle_yaw_joint" type="revolute">
+    <origin xyz="0 -0.000399999999999998 -0.05" rpy="0 0 0" />
+    <parent link="right_calf" />
+    <child link="right_ankle" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="60" velocity="3.0" />
+  </joint>
+  <link
+    name="right_foot">
+    <inertial>
+      <origin
+        xyz="0.014365022319647 0.000348760841773481 -0.0148346595870652"
+        rpy="0 0 0" />
+      <mass
+        value="0.0228603486218896" />
+      <inertia
+        ixx="1.25249372576386E-06"
+        ixy="-1.20058898228181E-08"
+        ixz="-2.13074381509581E-08"
+        iyy="5.69925452272627E-06"
+        iyz="2.47510317939399E-08"
+        izz="5.49779972908031E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_foot.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_foot.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_ankle_pitch_joint" type="revolute">
+    <origin xyz="0 -0.000400000000163079 -0.0605000000000001" rpy="0 0 0" />
+    <parent link="right_ankle" />
+    <child link="right_foot" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3.14" upper="3.14" effort="60" velocity="3.0" />
+  </joint>
+  <link
+    name="waist">
+    <inertial>
+      <origin
+        xyz="-2.78451633542263E-05 -2.47771135311539E-15 0.0268367474483797"
+        rpy="0 0 0" />
+      <mass
+        value="0.0373467314091487" />
+      <inertia
+        ixx="4.96760608627757E-06"
+        ixy="-1.08156892395281E-06"
+        ixz="-1.82493971952494E-08"
+        iyy="4.11692061155961E-06"
+        iyz="2.44449200173205E-14"
+        izz="5.10904301905999E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/waist.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/waist.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="waist_yaw_joint" type="revolute">
+    <origin xyz="0 0 0.0225" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="waist" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.14" upper="3.14" effort="50" velocity="2.0" />
+  </joint>
+  <link
+    name="waist_gearbox">
+    <inertial>
+      <origin
+        xyz="-0.00209486135193282 -3.9192539507599E-09 3.69670034860992E-09"
+        rpy="0 0 0" />
+      <mass
+        value="0.00167807277388433" />
+      <inertia
+        ixx="6.45238102360225E-08"
+        ixy="7.88345428276935E-14"
+        ixz="-6.9056519054896E-14"
+        iyy="6.1227442020872E-08"
+        iyz="-2.28789528634501E-12"
+        izz="6.84762579279253E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/waist_gearbox.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.505882352941176 0.298039215686275 0.56078431372549 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/waist_gearbox.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="waist_pitch_joint" type="revolute">
+    <origin xyz="0 0 0.0429" rpy="0 0 0" />
+    <parent link="waist" />
+    <child link="waist_gearbox" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3.14" upper="3.14" effort="50" velocity="2.0" />
+  </joint>
+  <link
+    name="chest">
+    <inertial>
+      <origin
+        xyz="-0.00109056356297449 2.29637847488418E-05 0.0464585510529491"
+        rpy="0 0 0" />
+      <mass
+        value="0.0755562721806732" />
+      <inertia
+        ixx="4.25008597560764E-05"
+        ixy="-1.16455260677203E-09"
+        ixz="-8.5681480595593E-08"
+        iyy="2.73598604752467E-05"
+        iyz="-1.05153078496443E-08"
+        izz="2.00400089638429E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/chest.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/chest.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="waist_roll_joint" type="revolute">
+    <origin xyz="-0.00205 0 0" rpy="0 0 0" />
+    <parent link="waist_gearbox" />
+    <child link="chest" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-3.14" upper="3.14" effort="50" velocity="2.0" />
+  </joint>
+  <link
+    name="left_shoulder_linkage">
+    <inertial>
+      <origin
+        xyz="-1.04083408558608E-17 0.0109007350224755 -0.00153840010258779"
+        rpy="0 0 0" />
+      <mass
+        value="0.000465130696673105" />
+      <inertia
+        ixx="1.46136594090028E-08"
+        ixy="1.67128298642439E-23"
+        ixz="-6.88119576171736E-24"
+        iyy="6.46269594071701E-09"
+        iyz="3.47189819031505E-09"
+        izz="1.23450667158476E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_shoulder_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.874509803921569 0.435294117647059 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_shoulder_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_shoulder_pitch_joint" type="revolute">
+    <origin xyz="-0.00220083341515049 0.021 0.0665" rpy="0 0 0" />
+    <parent link="chest" />
+    <child link="left_shoulder_linkage" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.14" upper="3.14" effort="30" velocity="2.0" />
+  </joint>
+  <link
+    name="left_upper_arm">
+    <inertial>
+      <origin
+        xyz="0.000730443523892843 6.06905177835682E-07 -0.0225990986425836"
+        rpy="0 0 0" />
+      <mass
+        value="0.00880489370590337" />
+      <inertia
+        ixx="1.12301906905259E-06"
+        ixy="3.19027527440734E-12"
+        ixz="-3.06692734181309E-08"
+        iyy="1.07211447974107E-06"
+        iyz="7.55962854995073E-10"
+        izz="2.382687004963E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_upper_arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_upper_arm.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_shoulder_roll_joint" type="revolute">
+    <origin xyz="0 0.019 -0.000399999999999845" rpy="0 0 0" />
+    <parent link="left_shoulder_linkage" />
+    <child link="left_upper_arm" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-3.14" upper="3.14" effort="30" velocity="2.0" />
+  </joint>
+  <link
+    name="left_elbow_linkage">
+    <inertial>
+      <origin
+        xyz="5.88841523921357E-06 0.00193019307900264 -0.0126177671310808"
+        rpy="0 0 0" />
+      <mass
+        value="0.000512959919910399" />
+      <inertia
+        ixx="2.11815480290007E-08"
+        ixy="5.8301887476501E-12"
+        ixz="-1.39480626367221E-11"
+        iyy="1.90152370264939E-08"
+        iyz="4.42906673402268E-09"
+        izz="6.6768088057423E-09" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_elbow_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.874509803921569 0.435294117647059 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_elbow_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_shoulder_yaw_joint" type="revolute">
+    <origin xyz="0.000400000000000011 0 -0.05" rpy="0 0 0" />
+    <parent link="left_upper_arm" />
+    <child link="left_elbow_linkage" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="25" velocity="2.0" />
+  </joint>
+  <link
+    name="left_force_arm">
+    <inertial>
+      <origin
+        xyz="-0.00502703489298648 -0.000730443523892847 -0.0257196821578029"
+        rpy="0 0 0" />
+      <mass
+        value="0.00880489370590337" />
+      <inertia
+        ixx="1.07211447974107E-06"
+        ixy="-3.1902752745307E-12"
+        ixz="7.55962854994431E-10"
+        iyy="1.12301906905259E-06"
+        iyz="3.06692734181307E-08"
+        izz="2.382687004963E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_force_arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/left_force_arm.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_elbow_pitch_joint" type="revolute">
+    <origin xyz="0.00502764179816415 0.000399999999999976 -0.0196294164847808" rpy="0 0 0" />
+    <parent link="left_elbow_linkage" />
+    <child link="left_force_arm" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.14" upper="3.14" effort="25" velocity="2.0" />
+  </joint>
+  <link
+    name="left_hand">
+    <inertial>
+      <origin
+        xyz="-0.0641450510469583 -0.00154728549637289 0.162739159100842"
+        rpy="0 0 0" />
+      <mass
+        value="0.958994731563227" />
+      <inertia
+        ixx="0.00200101755366171"
+        ixy="-0.000415365047777268"
+        ixz="-9.35365647561517E-07"
+        iyy="0.0163960483281484"
+        iyz="-4.83256086221939E-07"
+        izz="0.0148106534037261" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+          <box size="0.05 0.05 0.05"/> 
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+          <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_wrist_yaw_joint" type="revolute">
+    <origin xyz="-0.00502764179816428 -0.000399999999999984 -0.0531205835152193" rpy="0 0 0" />
+    <parent link="left_force_arm" />
+    <child link="left_hand" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="20" velocity="2.0" />
+  </joint>
+  <link
+    name="right_shoulder_linkage">
+    <inertial>
+      <origin
+        xyz="-7.80625564189563E-18 -0.0109007350224755 -0.00153840010258779"
+        rpy="0 0 0" />
+      <mass
+        value="0.000465130696673103" />
+      <inertia
+        ixx="1.46136594090028E-08"
+        ixy="-4.88765083504891E-25"
+        ixz="-3.32232883100059E-24"
+        iyy="6.46269594071698E-09"
+        iyz="-3.47189819031504E-09"
+        izz="1.23450667158475E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_shoulder_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.874509803921569 0.435294117647059 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_shoulder_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_shoulder_pitch_joint" type="revolute">
+    <origin xyz="-0.00220083341515048 -0.021 0.0665" rpy="0 0 0" />
+    <parent link="chest" />
+    <child link="right_shoulder_linkage" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3.14" upper="3.14" effort="30" velocity="2.0" />
+  </joint>
+  <link
+    name="right_upper_arm">
+    <inertial>
+      <origin
+        xyz="0.000730443523892871 6.06905177831345E-07 -0.0225990986425835"
+        rpy="0 0 0" />
+      <mass
+        value="0.00880489370590337" />
+      <inertia
+        ixx="1.12301906905259E-06"
+        ixy="3.19027527449929E-12"
+        ixz="-3.06692734181308E-08"
+        iyy="1.07211447974107E-06"
+        iyz="7.55962854994403E-10"
+        izz="2.382687004963E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_upper_arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_upper_arm.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_shoulder_roll_joint" type="revolute">
+    <origin xyz="0 -0.019 -0.000399999999999956" rpy="0 0 0" />
+    <parent link="right_shoulder_linkage" />
+    <child link="right_upper_arm" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-3.14" upper="3.14" effort="30" velocity="2.0" />
+  </joint>
+  <link
+    name="right_elbow_linkage">
+    <inertial>
+      <origin
+        xyz="5.8884152393246E-06 -0.00193019307900265 -0.0126177671310807"
+        rpy="0 0 0" />
+      <mass
+        value="0.000512959919910399" />
+      <inertia
+        ixx="2.11815480290007E-08"
+        ixy="-5.83018874764086E-12"
+        ixz="-1.39480626366986E-11"
+        iyy="1.90152370264939E-08"
+        iyz="-4.42906673402269E-09"
+        izz="6.6768088057423E-09" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_elbow_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.874509803921569 0.435294117647059 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_elbow_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_shoulder_yaw_joint" type="revolute">
+    <origin xyz="0.000400000000000011 0 -0.05" rpy="0 0 0" />
+    <parent link="right_upper_arm" />
+    <child link="right_elbow_linkage" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="25" velocity="2.0" />
+  </joint>
+  <link
+    name="right_force_arm">
+    <inertial>
+      <origin
+        xyz="0.00516292855184536 0.000730443523892734 -0.0197089212933242"
+        rpy="0 0 0" />
+      <mass
+        value="0.00880489370590336" />
+      <inertia
+        ixx="1.07211447974107E-06"
+        ixy="-3.19027527443523E-12"
+        ixz="-7.55962854994681E-10"
+        iyy="1.12301906905259E-06"
+        iyz="-3.06692734181304E-08"
+        izz="2.382687004963E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_force_arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/right_force_arm.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_elbow_pitch_joint" type="revolute">
+    <origin xyz="-0.00516353545702317 -0.000399999999999852 -0.0256401773492593" rpy="0 0 0" />
+    <parent link="right_elbow_linkage" />
+    <child link="right_force_arm" />
+    <axis xyz="0 -1 0" />
+    <limit lower="-3.14" upper="3.14" effort="25" velocity="2.0" />
+  </joint>
+  <link
+    name="right_hand">
+    <inertial>
+      <origin
+        xyz="-0.0641450510469584 0.00154728549637277 0.162760840899159"
+        rpy="0 0 0" />
+      <mass
+        value="0.958994731563227" />
+      <inertia
+        ixx="0.00200101755366171"
+        ixy="0.000415365047777261"
+        ixz="9.35365647567705E-07"
+        iyy="0.0163960483281484"
+        iyz="-4.83256086223737E-07"
+        izz="0.0148106534037261" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.05 0.05 0.05"/> 
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.05 0.05 0.05"/> 
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_wrist_yaw_joint" type="revolute">
+    <origin xyz="0.00516353545702319 0.000399999999999891 -0.0471098226507407" rpy="0 0 0" />
+    <parent link="right_force_arm" />
+    <child link="right_hand" />
+    <axis xyz="0 0 -1" />
+    <limit lower="-3.14" upper="3.14" effort="20" velocity="2.0" />
+  </joint>
+  <link
+    name="neck">
+    <inertial>
+      <origin
+        xyz="0.000417906212311604 -2.84973119655703E-09 0.0231901610013556"
+        rpy="0 0 0" />
+      <mass
+        value="0.00542828540847397" />
+      <inertia
+        ixx="3.79593550642447E-07"
+        ixy="6.49265749142071E-14"
+        ixz="-2.99110992135109E-08"
+        iyy="3.68979756678487E-07"
+        iyz="6.0141258121995E-10"
+        izz="1.51866667747552E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/neck.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/neck.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="neck_yaw_joint" type="revolute">
+    <origin xyz="-0.00220083341515049 0 0.0514999999999999" rpy="0 0 0" />
+    <parent link="chest" />
+    <child link="neck" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.14" upper="3.14" effort="20" velocity="2.0" />
+  </joint>
+  <link
+    name="neck_linkage">
+    <inertial>
+      <origin
+        xyz="-0.000867599559925847 0.00507742768680968 0.0110861341010662"
+        rpy="0 0 0" />
+      <mass
+        value="0.000937741282929013" />
+      <inertia
+        ixx="5.53188029852909E-08"
+        ixy="-1.50677079955003E-09"
+        ixz="-9.16725475355428E-09"
+        iyy="5.53188029852909E-08"
+        iyz="-9.16725475355424E-09"
+        izz="1.74258449158426E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/neck_linkage.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/neck_linkage.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="neck_roll_joint" type="revolute">
+    <origin xyz="-0.000399999999999993 -0.00380982812688381 0.0327138658989339" rpy="0 0 0" />
+    <parent link="neck" />
+    <child link="neck_linkage" />
+    <axis xyz="-1 0 0" />
+    <limit lower="-3.14" upper="3.14" effort="15" velocity="2.0" />
+  </joint>
+  <link
+    name="head">
+    <inertial>
+      <origin
+        xyz="-0.00169164222921658 -0.00040564245778485 0.034325336580073"
+        rpy="0 0 0" />
+      <mass
+        value="0.258165591942178" />
+      <inertia
+        ixx="0.000173245197247839"
+        ixy="-3.63136181728528E-10"
+        ixz="9.81232132115855E-06"
+        iyy="0.000167428201476914"
+        iyz="-2.29871797477406E-08"
+        izz="0.000147496657635641" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/head.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Assembly.SLDASM/meshes/head.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="neck_pitch_joint" type="revolute">
+    <origin xyz="0.000400000000000011 0.00420982812688381 0.0220861341010661" rpy="0 0 0" />
+    <parent link="neck_linkage" />
+    <child link="head" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.14" upper="3.14" effort="15" velocity="2.0" />
+  </joint>
+  <link
+    name="left_ear">
+    <inertial>
+      <origin
+        xyz="0.00473047414855556 -0.0391807885709675 -0.142573440323969"
+        rpy="0 0 0" />
+      <mass
+        value="0.958994731563227" />
+      <inertia
+        ixx="0.0163960483084969"
+        ixy="5.91118284116242E-06"
+        ixz="0.000415323628615235"
+        iyy="0.0148076489083955"
+        iyz="-0.000196158914461711"
+        izz="0.00200402206864383" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_ear_fix"
+    type="revolute">
+    <origin
+      xyz="-0.0031831 0.036593 0.039214"
+      rpy="0.015389 0 0" />
+    <parent
+      link="head" />
+    <child
+      link="left_ear" />
+    <axis
+      xyz="-1 0 0" />
+    <limit lower="-3.14" upper="3.14" effort="15" velocity="2.0" />
+  </joint>
+  <link
+    name="right_ear">
+    <inertial>
+      <origin
+        xyz="0.0047351185244249 0.0391994441287554 -0.142573909370643"
+        rpy="0 0 0" />
+      <mass
+        value="0.958994731563227" />
+      <inertia
+        ixx="0.0163960466703144"
+        ixy="-7.05420302928062E-06"
+        ixz="0.000415332140459178"
+        iyy="0.0148076024383018"
+        iyz="0.000197673948406102"
+        izz="0.00200407017692" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_ear_fix"
+    type="revolute">
+    <origin
+      xyz="-0.0031832 -0.037394 0.039214"
+      rpy="-0.015365 0 0.00011909" />
+    <parent
+      link="head" />
+    <child
+      link="right_ear" />
+    <axis
+      xyz="-1 0.0001191 0" />
+    <limit lower="-3.14" upper="3.14" effort="15" velocity="2.0" />
+  </joint>
+</robot>

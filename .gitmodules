@@ -1,0 +1,4 @@
+[submodule "GVHMR/third-party/DPVO"]
+	path = GVHMR/third-party/DPVO
+	url = https://github.com/princeton-vl/DPVO.git
+
