@@ -232,6 +232,7 @@ python server_side/action_imitation_server.py --host 0.0.0.0 --port 8003
 | `GET /tools` | 返回 LLM Tool JSON Schema |
 | `POST /tool/call` | 执行 LLM 工具调用 |
 | `POST /generate` | 输入服务器本地视频路径 |
+| `POST /action_imitation/session/start` | Agent 在视频到达前登记 `robot_id + task_id` |
 | `WS /ws/stream` | 发送 JPEG 视频帧 |
 | `GET /docs` | FastAPI 交互文档 |
 
@@ -302,6 +303,25 @@ python server_side/action_imitation_server.py \
   --raw-motion-coord ik_input
 ```
 
+Agent 必须在发送该任务的视频帧前登记 session；重复登记相同
+`robot_id + task_id` 是幂等的，不同 `task_id` 与当前录制冲突时返回 HTTP 409：
+
+```bash
+curl -X POST http://127.0.0.1:8003/action_imitation/session/start \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "robot_id": "robot_001",
+    "task_id": "action_imitation_example",
+    "source_turn_id": "turn-example",
+    "source_request_id": "request-example",
+    "function_call_id": "call-example"
+  }'
+```
+
+未登记 session 的 ZMQ 帧会被忽略。录制 idle flush 时，服务会固定本次
+session 身份；最终回调包含 `robot_id`、`task_id`、绝对 `output_path` 和
+文件 `sha256`，不会被后续任务覆盖。
+
 支持的主要环境变量：
 
 | 变量 | 默认值 | 含义 |
@@ -315,6 +335,8 @@ python server_side/action_imitation_server.py \
 | `ZMQ_STREAM_MAX_CHUNKS` | `0` | 最大 chunk 数，0 表示不限 |
 | `ZMQ_STREAM_IDLE_FLUSH_SEC` | `6.0` | 无新帧后合并本次会话的等待时间 |
 | `AGENT_ACTION_RESULT_URL` | `http://127.0.0.1:8007/action_imitation/result` | 动作结果回调地址 |
+| `AGENT_ACTION_RESULT_TIMEOUT_SEC` | `5` | Agent 结果回调超时秒数 |
+| `AGENT_ACTION_RESULT_RETRIES` | `3` | Agent 结果回调最大尝试次数（HTTP 4xx 不重试） |
 
 更完整的现有集成命令见 [`server_side/READEME.md`](server_side/READEME.md)。其中 `robot_ai` 和模拟边缘发布器属于同一工作区的其他项目，并不包含在本仓库内。
 

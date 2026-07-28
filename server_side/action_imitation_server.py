@@ -1,11 +1,13 @@
 import asyncio
 import contextlib
+import hashlib
 import json
 import os
 import sys
 import time
 import tempfile
 import argparse
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
@@ -14,8 +16,13 @@ import cv2
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from action_imitation_session import (
+    ActionImitationSessionRegistry,
+    register_session_request,
+)
 from run import GVHMRSystem
 
 # ============================================================
@@ -73,6 +80,14 @@ ZMQ_STREAM_IDLE_FLUSH_SEC = float(os.getenv("ZMQ_STREAM_IDLE_FLUSH_SEC", "6.0"))
 AGENT_ACTION_RESULT_URL = os.getenv(
     "AGENT_ACTION_RESULT_URL", "http://127.0.0.1:8007/action_imitation/result"
 ).strip()
+AGENT_ACTION_RESULT_TIMEOUT_SEC = float(
+    os.getenv("AGENT_ACTION_RESULT_TIMEOUT_SEC", "5")
+)
+AGENT_ACTION_RESULT_RETRIES = max(
+    1, int(os.getenv("AGENT_ACTION_RESULT_RETRIES", "3"))
+)
+
+action_imitation_sessions = ActionImitationSessionRegistry()
 
 
 def _parse_robot_id_from_topic(topic: str) -> str:
@@ -89,39 +104,77 @@ def _parse_robot_id_from_topic(topic: str) -> str:
     return ""
 
 
-# robot_id：优先环境变量覆盖，否则从订阅 topic 解析。
-AGENT_NOTIFY_ROBOT_ID = (
-    os.getenv("AGENT_NOTIFY_ROBOT_ID", "").strip()
-    or _parse_robot_id_from_topic(ZMQ_STREAM_TOPIC)
-)
+def _calculate_sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as file_obj:
+        for block in iter(lambda: file_obj.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
-def _post_action_result_notify(robot_id: str, output_path: str) -> None:
-    """把 {robot_id, output_path} POST 给 Agent，触发 npy 下传（同步，供 executor 调用）。"""
+def _post_action_result_notify(
+    robot_id: str, task_id: str, output_path: str, sha256: str
+) -> bool:
+    """Post an exact session identity and artifact metadata to Agent."""
     url = AGENT_ACTION_RESULT_URL
-    if not url or not robot_id or not output_path:
-        return
-    body = json.dumps({"robot_id": robot_id, "output_path": output_path}).encode("utf-8")
-    request = urllib.request.Request(
-        url, data=body, headers={"Content-Type": "application/json"}, method="POST"
-    )
-    try:
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open(request, timeout=5) as resp:
+    if not url or not robot_id or not task_id or not output_path or not sha256:
+        return False
+    body = json.dumps({
+        "robot_id": robot_id,
+        "task_id": task_id,
+        "output_path": output_path,
+        "sha256": sha256,
+    }).encode("utf-8")
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+    for attempt in range(1, AGENT_ACTION_RESULT_RETRIES + 1):
+        if attempt == 2:
+            time.sleep(0.1)
+        elif attempt > 2:
+            time.sleep(0.5)
+        request = urllib.request.Request(
+            url, data=body, headers={"Content-Type": "application/json"}, method="POST"
+        )
+        started = time.monotonic()
+        try:
+            with opener.open(request, timeout=AGENT_ACTION_RESULT_TIMEOUT_SEC) as resp:
+                response_body = resp.read().decode("utf-8", errors="replace")
+                http_status = getattr(resp, "status", None)
             print(json.dumps({
                 "source": "zmq_stream", "status": "notify_agent",
-                "robot_id": robot_id, "output_path": output_path,
-                "http_status": getattr(resp, "status", None),
+                "robot_id": robot_id, "task_id": task_id,
+                "output_path": output_path, "sha256": sha256,
+                "http_status": http_status, "response_body": response_body,
+                "attempt": attempt,
+                "latency_ms": round((time.monotonic() - started) * 1000),
             }, ensure_ascii=False))
-    except Exception as e:
-        print(json.dumps({
-            "source": "zmq_stream", "status": "notify_agent_failed",
-            "robot_id": robot_id, "output_path": output_path,
-            "error_type": type(e).__name__, "detail": str(e),
-        }, ensure_ascii=False))
+            return True
+        except urllib.error.HTTPError as exc:
+            response_body = exc.read().decode("utf-8", errors="replace")
+            print(json.dumps({
+                "source": "zmq_stream", "status": "notify_agent_failed",
+                "robot_id": robot_id, "task_id": task_id,
+                "output_path": output_path, "sha256": sha256,
+                "http_status": exc.code, "response_body": response_body,
+                "attempt": attempt, "error_type": type(exc).__name__,
+                "detail": str(exc),
+            }, ensure_ascii=False))
+            # Contract/conflict failures need operator attention, not blind retries.
+            if 400 <= exc.code < 500:
+                break
+        except Exception as exc:
+            print(json.dumps({
+                "source": "zmq_stream", "status": "notify_agent_failed",
+                "robot_id": robot_id, "task_id": task_id,
+                "output_path": output_path, "sha256": sha256,
+                "http_status": None, "response_body": None,
+                "attempt": attempt, "error_type": type(exc).__name__,
+                "detail": str(exc),
+            }, ensure_ascii=False))
+    return False
 
 
-def _combine_and_notify_session(paths: list, robot_id: str) -> None:
+def _combine_and_notify_session(paths: list, robot_id: str, task_id: str) -> None:
     """一次录制结束时：把累计的分块 npy 按时间轴(axis=0)拼成一个完整 npy，只 notify 一次。
 
     同步函数，供 executor 调用。npy 为 [T, J, C] float32；沿 T 拼接得到完整动作序列。
@@ -135,20 +188,41 @@ def _combine_and_notify_session(paths: list, robot_id: str) -> None:
         arrays = [_np.load(p) for p in paths]
         combined = _np.concatenate(arrays, axis=0)
         ts_ms = int(time.time() * 1000)
-        out_path = os.path.join(RAW_MOTION_OUTPUT_DIR, f"action_imitation_{ts_ms}_combined.npy")
+        out_path = os.path.abspath(os.path.join(
+            RAW_MOTION_OUTPUT_DIR, f"action_imitation_{ts_ms}_combined.npy"
+        ))
         _np.save(out_path, combined)
+        sha256 = _calculate_sha256(out_path)
         print(json.dumps({
             "source": "zmq_stream", "status": "session_combined",
+            "robot_id": robot_id, "task_id": task_id,
             "chunks": len(paths), "combined_shape": list(combined.shape),
-            "combined_path": out_path,
+            "combined_path": out_path, "sha256": sha256,
         }, ensure_ascii=False))
     except Exception as e:
         print(json.dumps({
             "source": "zmq_stream", "status": "session_combine_failed",
             "chunks": len(paths), "error_type": type(e).__name__, "detail": str(e),
         }, ensure_ascii=False))
+        action_imitation_sessions.mark_state(robot_id, task_id, "processing_failed")
         return
-    _post_action_result_notify(robot_id, out_path)
+    if not task_id:
+        print(json.dumps({
+            "source": "zmq_stream", "status": "notify_agent_skipped",
+            "reason": "missing_task_id", "robot_id": robot_id,
+            "output_path": out_path, "sha256": sha256,
+        }, ensure_ascii=False))
+        return
+    action_imitation_sessions.record_result(
+        robot_id,
+        task_id,
+        combined_path=out_path,
+        sha256=sha256,
+    )
+    notified = _post_action_result_notify(robot_id, task_id, out_path, sha256)
+    action_imitation_sessions.mark_state(
+        robot_id, task_id, "completed" if notified else "notify_pending"
+    )
 
 # ============================================================
 # 模型加载（全局单例，常驻显存）
@@ -215,6 +289,14 @@ class StartStreamInput(BaseModel):
         ge=0,
         description="最多处理几个 chunk 后自动停止，0 表示持续运行直到客户端断开"
     )
+
+
+class ActionImitationSessionStart(BaseModel):
+    robot_id: str | None = ""
+    task_id: str | None = ""
+    source_turn_id: str | None = ""
+    source_request_id: str | None = ""
+    function_call_id: str | None = ""
 
 
 # --- 生成给 LLM 的工具 Schema（对应 OpenAI tools 格式）---
@@ -333,6 +415,38 @@ app = FastAPI(
     version="2.0",
     description="将人体运动视频转换为机器人关节角度(DOF)序列，支持大模型工具调用"
 )
+
+
+# ============================================================
+# Agent -> GVHMR 动作模仿 session 登记
+# ============================================================
+@app.post("/action_imitation/session/start")
+async def start_action_imitation_session(request: ActionImitationSessionStart):
+    http_status, response, session = register_session_request(
+        action_imitation_sessions,
+        robot_id=request.robot_id,
+        task_id=request.task_id,
+        source_turn_id=request.source_turn_id,
+        source_request_id=request.source_request_id,
+        function_call_id=request.function_call_id,
+    )
+    if http_status != 200:
+        return JSONResponse(status_code=http_status, content=response)
+
+    assert session is not None
+    print(json.dumps({
+        "source": "action_imitation_session",
+        "status": "session_registered",
+        "robot_id": response["robot_id"],
+        "task_id": response["task_id"],
+        "state": response["state"],
+        "session_state": session.state,
+        "reason": response.get("reason", ""),
+        "source_turn_id": session.source_turn_id,
+        "source_request_id": session.source_request_id,
+        "function_call_id": session.function_call_id,
+    }, ensure_ascii=False))
+    return response
 
 
 # ============================================================
@@ -520,6 +634,7 @@ async def zmq_video_stream_consumer():
     chunk_id = 0
     pending_task: asyncio.Task | None = None
     session_npy_paths: list[str] = []  # 本次录制累计的分块 npy 路径
+    recording_robot_id = ""
 
     async def _collect(task):
         """等一个 chunk 任务完成，把它产出的 npy 路径收进本次会话。"""
@@ -534,21 +649,64 @@ async def zmq_video_stream_consumer():
 
     async def _do_flush():
         """录制结束：收尾 pending chunk -> 拼接本次所有分块 -> 只 notify 一次。"""
-        nonlocal pending_task
-        await _collect(pending_task)
-        pending_task = None
-        if not session_npy_paths:
+        nonlocal pending_task, recording_robot_id, frame_buffer
+        if not recording_robot_id:
             return
+
+        # Before yielding to a long-running inference task, detach an immutable
+        # identity snapshot. A newly armed task cannot overwrite this callback.
+        processing_session = action_imitation_sessions.begin_processing(
+            recording_robot_id
+        )
+        flushed_robot_id = recording_robot_id
+        recording_robot_id = ""
+        task_to_collect = pending_task
+        pending_task = None
         paths = list(session_npy_paths)
         session_npy_paths.clear()
-        if not AGENT_NOTIFY_ROBOT_ID:
+        dropped_tail_frames = len(frame_buffer)
+        frame_buffer.clear()
+        await _collect(task_to_collect)
+        if session_npy_paths:
+            paths.extend(session_npy_paths)
+            session_npy_paths.clear()
+
+        if processing_session is None:
             print(json.dumps({
-                "source": "zmq_stream", "status": "notify_agent_skipped",
-                "reason": "empty_robot_id", "chunks": len(paths),
+                "source": "zmq_stream", "status": "session_flush_skipped",
+                "reason": "no_active_session", "robot_id": flushed_robot_id,
+                "chunks": len(paths),
             }, ensure_ascii=False))
             return
+        if not paths:
+            print(json.dumps({
+                "source": "zmq_stream", "status": "notify_agent_skipped",
+                "reason": "no_session_artifacts",
+                "robot_id": processing_session.robot_id,
+                "task_id": processing_session.task_id,
+                "frame_count": processing_session.frame_count,
+                "dropped_tail_frames": dropped_tail_frames,
+            }, ensure_ascii=False))
+            action_imitation_sessions.mark_state(
+                processing_session.robot_id,
+                processing_session.task_id,
+                "processing_failed",
+            )
+            return
+        if dropped_tail_frames:
+            print(json.dumps({
+                "source": "zmq_stream", "status": "session_tail_dropped",
+                "robot_id": processing_session.robot_id,
+                "task_id": processing_session.task_id,
+                "frames": dropped_tail_frames,
+                "reason": "shorter_than_chunk",
+            }, ensure_ascii=False))
         await asyncio.get_event_loop().run_in_executor(
-            None, _combine_and_notify_session, paths, AGENT_NOTIFY_ROBOT_ID
+            None,
+            _combine_and_notify_session,
+            paths,
+            processing_session.robot_id,
+            processing_session.task_id,
         )
 
     print(
@@ -586,12 +744,27 @@ async def zmq_video_stream_consumer():
             if topic_str != ZMQ_STREAM_TOPIC:
                 continue
 
+            robot_id = _parse_robot_id_from_topic(topic_str)
+            if recording_robot_id and recording_robot_id != robot_id:
+                # Defensive for future wildcard subscriptions. The current
+                # deployment subscribes one exact topic.
+                await _do_flush()
+
             img_array = np.frombuffer(raw_bytes, dtype=np.uint8)
             frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
             if frame is None:
                 print("ZMQ 视频流入口忽略无法解码的 JPEG 帧。")
                 continue
 
+            session = action_imitation_sessions.note_frame(robot_id)
+            if session is None:
+                print(json.dumps({
+                    "source": "zmq_stream", "status": "frame_ignored",
+                    "reason": "no_armed_session", "robot_id": robot_id,
+                    "topic": topic_str,
+                }, ensure_ascii=False))
+                continue
+            recording_robot_id = robot_id
             frame_buffer.append(frame)
 
             if len(frame_buffer) >= frames_per_chunk:
@@ -778,6 +951,7 @@ if __name__ == "__main__":
     print(f"  工具 Schema:  GET  http://{args.host}:{args.port}/tools")
     print(f"  工具调用:     POST http://{args.host}:{args.port}/tool/call")
     print(f"  文件接口:     POST http://{args.host}:{args.port}/generate")
+    print(f"  Session登记:  POST http://{args.host}:{args.port}/action_imitation/session/start")
     print(f"  视频流:       WS   ws://{args.host}:{args.port}/ws/stream")
     print(f"  ZMQ视频流:    {'已启用' if ZMQ_STREAM_ENABLED else '未启用'} {ZMQ_STREAM_URL} topic={ZMQ_STREAM_TOPIC}")
     print(f"  Raw Motion:   {'已启用' if RAW_MOTION_ONLY else '未启用'} output_dir={RAW_MOTION_OUTPUT_DIR} coord={RAW_MOTION_COORD}")
