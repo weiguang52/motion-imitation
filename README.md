@@ -217,6 +217,28 @@ raw_motion_npy/action_imitation_1780000000000.npy
 - `smpl`：原始 SMPL 坐标，不归零。
 - `v3`：旧版 Z-up 调试格式。
 
+#### 可视化导出的 `.npy`
+
+`server_side/npyvisual.py` 可以把单段或合并后的动作文件渲染为骨架动画。运行前将
+脚本顶部的 `path` 改为目标 `.npy` 文件；推荐使用
+`--raw-motion-coord ik_input` 或 `h1` 生成的文件，因为脚本会继续应用供
+H1/可视化使用的坐标旋转。
+
+```bash
+python server_side/npyvisual.py
+```
+
+脚本兼容 `(T, J, 3)`、`(J, 3, T)` 和 `(1, J, 3, T)`，也支持包含 `motion`
+字段的 object dict；关节数应为 22 或 29。默认渲染全部可用关节，将
+`USE_22_ONLY` 设为 `True` 可只显示前 22 个 SMPL 关节。
+
+结果写入 `output/`：
+
+```text
+output/<输入文件名>.gif
+output/<输入文件名>.png
+```
+
 ### 2. 启动完整动作模仿服务
 
 完整模式会执行 GVHMR 和机器人 IK，返回 28-DOF 序列：

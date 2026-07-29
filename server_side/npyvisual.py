@@ -11,7 +11,7 @@ from pathlib import Path
 # =========================
 # 配置
 # =========================
-path = "/home/wd/Agent_memory_patch/IK_Retargeting/raw_motion_npy/action_imitation_1783921827887_combined.npy"
+path = "raw_motion_npy/action_imitation_1784968878422.npy"
 
 output_dir = "./output"
 os.makedirs(output_dir, exist_ok=True)
