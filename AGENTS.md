@@ -7,7 +7,13 @@ These instructions apply to the entire `motion-imitation` repository.
 - The repository root is `/home/wd/Agent_memory_patch/IK_Retargeting`.
 - The GitHub remote is `https://github.com/weiguang52/motion-imitation.git`.
 - The primary branch is `main`.
-- Use the repository-local author identity already configured in `.git/config`.
+- When the user says to commit or push `IK_Retargeting`, interpret the target as
+  this repository, commit to `main`, and push to
+  `https://github.com/weiguang52/motion-imitation.git`.
+- Use `weiguang52 <2386690965@qq.com>` as the author and committer for those
+  commits. Pass the identity for the individual commit (for example with
+  `git -c user.name=... -c user.email=... commit`) so existing repository-local
+  or global Git identity settings are not overwritten.
 - Do not commit the parent workspace `/home/wd/Agent_memory_patch`; run Git commands from this repository root.
 
 ## Repository structure

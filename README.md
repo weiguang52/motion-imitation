@@ -344,6 +344,27 @@ curl -X POST http://127.0.0.1:8003/action_imitation/session/start \
 session 身份；最终回调包含 `robot_id`、`task_id`、绝对 `output_path` 和
 文件 `sha256`，不会被后续任务覆盖。
 
+登记接口的主要响应：
+
+- 缺少非空 `robot_id` 或 `task_id`：HTTP 400，
+  `reason=missing_robot_id_or_task_id`
+- 首次登记：HTTP 200，`state=armed`
+- 重复登记同一 `robot_id + task_id`：HTTP 200，
+  `reason=already_registered`，且不会重置已收到的帧或已有状态
+- 同一机器人仍有其他 active task：HTTP 409，
+  `reason=active_session_conflict`，并返回 `active_task_id` 和
+  `requested_task_id`
+
+session 的内部状态依次为 `armed -> recording -> processing`。合并与回调成功后
+进入 `completed`；没有可合并分块或处理失败时进入 `processing_failed`；回调重试
+仍失败时保留合并文件路径与 SHA-256，并进入 `notify_pending`。旧任务进入
+`processing` 后会从 active 槽位原子摘除，因此同一机器人可以登记下一任务，而旧任务
+仍使用自己的身份快照完成合并和回调。
+
+idle flush 只合并已经达到 `ZMQ_STREAM_CHUNK_SEC` 并完成推理的分块。末尾不足一个
+chunk 的帧会被丢弃，并记录 `session_tail_dropped` 日志；没有 armed session 的帧会
+记录 `frame_ignored`，不会进入动作处理。
+
 支持的主要环境变量：
 
 | 变量 | 默认值 | 含义 |
