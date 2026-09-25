@@ -74,8 +74,11 @@ N, J, _ = seq.shape
 
 print("normalized seq shape:", seq.shape)
 
+if J == 43:
+    seq = seq[:, :29, :]
+    J = 29
 if J not in (22, 29):
-    raise ValueError(f"Expected 22 or 29 joints, got J={J}, shape={seq.shape}")
+    raise ValueError(f"Expected 22, 29 or 43 rows, got J={J}, shape={seq.shape}")
 
 if USE_22_ONLY and J >= 22:
     seq = seq[:, :22, :]

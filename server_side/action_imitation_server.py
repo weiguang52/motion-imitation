@@ -49,10 +49,14 @@ _PRE_PARSER.add_argument(
     default=os.getenv("RAW_MOTION_COORD", "ik_input"),
     help="raw motion 坐标系：ik_input/h1=推荐，保存为可视化 rot/H1PinkSolver 的输入并 pelvis 归零；smpl=原始 SMPL 不归零；v3=旧 V3/Z-up 调试格式",
 )
+_PRE_PARSER.add_argument("--raw-motion-target-fps", type=float, default=float(os.getenv("RAW_MOTION_TARGET_FPS", "20")))
+_PRE_PARSER.add_argument("--raw-motion-extended", action="store_true", default=os.getenv("RAW_MOTION_EXTENDED", "0").lower() in {"1", "true", "yes"})
 _PRE_ARGS, _UNKNOWN_ARGS = _PRE_PARSER.parse_known_args()
 RAW_MOTION_ONLY = _PRE_ARGS.raw_motion_only
 RAW_MOTION_OUTPUT_DIR = _PRE_ARGS.raw_motion_output_dir
 RAW_MOTION_COORD = _PRE_ARGS.raw_motion_coord
+RAW_MOTION_TARGET_FPS = _PRE_ARGS.raw_motion_target_fps
+RAW_MOTION_EXTENDED = _PRE_ARGS.raw_motion_extended
 
 # ZMQ 视频流入口配置。默认关闭，避免影响原有 REST / WebSocket 行为。
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -353,6 +357,8 @@ def _run_raw_motion(
     static_cam: bool = False,
     output_dir: str | None = None,
     raw_motion_coord: str | None = None,
+    raw_motion_target_fps: float | None = None,
+    raw_motion_extended: bool | None = None,
 ) -> dict:
     result = gvhmr_sys.process_video_raw_motion(
         video_path_str=video_path,
@@ -360,6 +366,8 @@ def _run_raw_motion(
         static_cam=static_cam,
         verbose=False,
         raw_motion_coord=raw_motion_coord or RAW_MOTION_COORD,
+        raw_motion_target_fps=RAW_MOTION_TARGET_FPS if raw_motion_target_fps is None else raw_motion_target_fps,
+        raw_motion_extended=RAW_MOTION_EXTENDED if raw_motion_extended is None else raw_motion_extended,
     )
     if result is None:
         raise RuntimeError("GVHMR raw motion export returned None")
@@ -945,6 +953,8 @@ if __name__ == "__main__":
     parser.add_argument("--raw-motion-only", action="store_true", default=RAW_MOTION_ONLY, help="只保存重定向前的 SMPL 关节动作帧 .npy，不运行 H1 IK")
     parser.add_argument("--raw-motion-output-dir", default=RAW_MOTION_OUTPUT_DIR, help="raw motion .npy 输出目录，文件名自动使用时间戳")
     parser.add_argument("--raw-motion-coord", choices=["ik_input", "h1", "smpl", "v3"], default=RAW_MOTION_COORD, help="raw motion 坐标系：ik_input/h1=推荐，保存为可视化 rot/H1PinkSolver 的输入并 pelvis 归零；smpl=原始 SMPL 不归零；v3=旧 V3/Z-up 调试格式")
+    parser.add_argument("--raw-motion-target-fps", type=float, default=RAW_MOTION_TARGET_FPS)
+    parser.add_argument("--raw-motion-extended", action="store_true", default=RAW_MOTION_EXTENDED)
     args = parser.parse_args()
 
     print(f"服务启动，监听 {args.host}:{args.port}")
@@ -954,6 +964,6 @@ if __name__ == "__main__":
     print(f"  Session登记:  POST http://{args.host}:{args.port}/action_imitation/session/start")
     print(f"  视频流:       WS   ws://{args.host}:{args.port}/ws/stream")
     print(f"  ZMQ视频流:    {'已启用' if ZMQ_STREAM_ENABLED else '未启用'} {ZMQ_STREAM_URL} topic={ZMQ_STREAM_TOPIC}")
-    print(f"  Raw Motion:   {'已启用' if RAW_MOTION_ONLY else '未启用'} output_dir={RAW_MOTION_OUTPUT_DIR} coord={RAW_MOTION_COORD}")
+    print(f"  Raw Motion:   {'已启用' if RAW_MOTION_ONLY else '未启用'} output_dir={RAW_MOTION_OUTPUT_DIR} coord={RAW_MOTION_COORD} fps={RAW_MOTION_TARGET_FPS} extended={RAW_MOTION_EXTENDED}")
     print(f"  API 文档:     http://{args.host}:{args.port}/docs")
     uvicorn.run(app, host=args.host, port=args.port)

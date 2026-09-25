@@ -450,3 +450,44 @@ HMR2 和 ViTPose 单文件均超过 GitHub 普通 Git 的 100MB 限制；SMPL/SM
 ## 第三方项目与许可
 
 本仓库包含或引用 GVHMR、SMPLSim、SMPL-X 和 DPVO。请保留各目录中的 LICENSE，并分别遵守模型、代码和数据集的原始许可。本仓库不授予重新分发 SMPL/SMPL-X 模型文件的权利。
+
+## Native tw_retargeting NPY bridge
+
+The raw-motion exporter writes C-contiguous little-endian `float32` NPY. It reads
+video FPS from OpenCV and resamples joint positions to 20 Hz by default, matching
+the native `tw_retargeting` input contract. A clip must contain at least nine
+exported frames. Set `--raw-motion-target-fps 0` to keep the source frame rate.
+
+```bash
+python server_side/run.py --input inputs/test_mp4/your_video.mp4 \
+  --raw-motion-only --raw-motion-coord ik_input \
+  --raw-motion-target-fps 20 --raw-motion-extended \
+  --raw-motion-output-dir raw_motion_npy
+```
+
+The ordinary export has shape `(T,29,3)`. `--raw-motion-extended` writes
+`(T,43,3)` while retaining the original 29 joint positions without reordering:
+
+| Rows | Data |
+| --- | --- |
+| 0:29 | SMPL joint positions, pelvis-relative with `ik_input` |
+| 29:32 | Left ankle world rotation matrix, three rows |
+| 32:35 | Right ankle world rotation matrix, three rows |
+| 35:38 | Left wrist world rotation matrix, three rows |
+| 38:41 | Right wrist world rotation matrix, three rows |
+| 41 | Left hand `[openness, detection_confidence, 0]` |
+| 42 | Right hand `[openness, detection_confidence, 0]` |
+
+Rotation matrices are derived from the SMPL kinematic chain and use the same
+source axes as the exported joints. Hand openness is estimated from visible
+2D finger landmarks with MediaPipe: 0 means closed, 1 means open. If a hand is
+not detected, openness is 0.5 and confidence is 0. These hand estimates are
+not SMPL predictions or reliable grasp measurements. Install `mediapipe==0.10.14`
+to enable the extended export. The native retargeter reads only the first 22
+joint rows, so the appended rows do not affect its output. The existing
+`server_side/npyvisual.py` displays the first 29 rows of an extended file.
+
+The server accepts the same `--raw-motion-target-fps` and
+`--raw-motion-extended` flags, or the `RAW_MOTION_TARGET_FPS` and
+`RAW_MOTION_EXTENDED` environment variables. Full video inference still
+requires the checkpoints and licensed SMPL/SMPL-X assets listed above.

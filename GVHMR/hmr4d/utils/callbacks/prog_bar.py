@@ -5,7 +5,10 @@ from typing import Any, Dict, Union
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 from pytorch_lightning.callbacks.progress.tqdm_progress import TQDMProgressBar, Tqdm, convert_inf
-from pytorch_lightning.callbacks.progress import ProgressBarBase as ProgressBar
+try:
+    from pytorch_lightning.callbacks.progress import ProgressBarBase as ProgressBar
+except ImportError:
+    from pytorch_lightning.callbacks.progress import ProgressBar
 from pytorch_lightning.utilities import rank_zero_only
 import pytorch_lightning as pl
 

@@ -2,6 +2,10 @@ import cv2
 import torch
 import pytorch_lightning as pl
 import numpy as np
+# Legacy SMPL pickle files use chumpy, which imports removed NumPy scalar aliases.
+for _alias, _scalar in {"bool": bool, "int": int, "float": float, "complex": complex,
+                        "object": object, "unicode": str, "str": str}.items():
+    np.__dict__.setdefault(_alias, _scalar)
 import argparse
 import sys
 import os
@@ -20,6 +24,12 @@ torch.backends.cudnn.allow_tf32 = True
 # Pytorch3D
 from pytorch3d.transforms import quaternion_to_matrix, axis_angle_to_matrix, matrix_to_axis_angle
 import smplx
+try:
+    from .raw_motion_export import (resample_values, smpl_global_rotations,
+                                    resample_rotations, estimate_hand_openness, pack_extended)
+except ImportError:
+    from raw_motion_export import (resample_values, smpl_global_rotations,
+                                   resample_rotations, estimate_hand_openness, pack_extended)
 # GVHMR Imports
 from hmr4d.utils.pylogger import Log
 from hmr4d.configs import register_store_gvhmr
@@ -303,6 +313,8 @@ class GVHMRSystem:
         f_mm=None,
         verbose=False,
         raw_motion_coord="h1",
+        raw_motion_target_fps=20.0,
+        raw_motion_extended=False,
     ):
         """
         只运行到 GVHMR -> SMPL joints，不做 H1 IK 重定向。
@@ -343,6 +355,31 @@ class GVHMRSystem:
         Log.info(f"[TIMING] GVHMR infer:  {time.time()-t0:.3f}s")
 
         joints = self._extract_pre_retarget_joints(pred, coord=raw_motion_coord)
+        capture = cv2.VideoCapture(str(video_path))
+        source_fps = float(capture.get(cv2.CAP_PROP_FPS))
+        capture.release()
+        if not np.isfinite(source_fps) or source_fps <= 0:
+            source_fps = 30.0
+        target_fps = float(raw_motion_target_fps or source_fps)
+        if not np.isfinite(target_fps) or target_fps <= 0:
+            raise ValueError("raw_motion_target_fps must be positive")
+        if raw_motion_extended:
+            params = pred["smpl_params_global"]
+            global_orient = params["global_orient"]
+            if raw_motion_coord == "v3":
+                global_orient = self._gvhmr_to_v3_global_orient(global_orient, global_orient.device)
+            rotations = smpl_global_rotations(
+                global_orient.detach().cpu().numpy(),
+                params["body_pose"].detach().cpu().numpy(),
+                self.smpl_model.parents.detach().cpu().numpy(),
+            )
+            rotations = resample_rotations(rotations, source_fps, target_fps)
+            hands = estimate_hand_openness(str(video_path), len(joints), source_fps, target_fps)
+        joints = resample_values(joints, source_fps, target_fps)
+        if len(joints) < 9:
+            raise ValueError("tw_retargeting requires at least 9 frames at the export frame rate")
+        if raw_motion_extended:
+            joints = pack_extended(joints, rotations, hands)
 
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -361,9 +398,11 @@ class GVHMRSystem:
             "filename": output_path.name,
             "timestamp_ms": timestamp_ms,
             "motion_shape": list(joints.shape),
-            "fps": DEFAULT_FPS if 'DEFAULT_FPS' in globals() else 30,
+            "fps": target_fps,
+            "source_fps": source_fps,
+            "extended": raw_motion_extended,
             "total_frames": int(joints.shape[0]),
-            "format": f"smpl_joints_pre_retargeting_float32_T_29_3_coord_{raw_motion_coord}",
+            "format": f"smpl_joints_pre_retargeting_float32_T_{joints.shape[1]}_3_coord_{raw_motion_coord}",
             "coord": raw_motion_coord,
         }
 
@@ -642,6 +681,8 @@ if __name__ == "__main__":
     parser.add_argument("--raw-motion-only", action="store_true", help="只输出重定向前的 SMPL 关节动作帧 .npy，不运行 H1 IK")
     parser.add_argument("--raw-motion-output-dir", type=str, default="outputs/raw_motion_npy", help="raw motion .npy 输出目录，文件名自动使用时间戳")
     parser.add_argument("--raw-motion-coord", choices=["ik_input", "h1", "smpl", "v3"], default="ik_input", help="raw motion 坐标系：ik_input/h1=推荐，保存为可视化 rot/H1PinkSolver 的输入并 pelvis 归零；smpl=原始 SMPL 不归零；v3=旧 V3/Z-up 调试格式")
+    parser.add_argument("--raw-motion-target-fps", type=float, default=20.0, help="Export FPS; 20 for tw_retargeting, 0 to keep source FPS")
+    parser.add_argument("--raw-motion-extended", action="store_true", help="Append ankle/wrist rotation matrices and hand openness")
     args = parser.parse_args()
 
     # 1. 实例化系统 (此时执行冷启动，加载所有模型，比较慢)
@@ -665,6 +706,8 @@ if __name__ == "__main__":
                     output_dir=args.raw_motion_output_dir,
                     static_cam=False,  # 或 True，根据需要
                     raw_motion_coord=args.raw_motion_coord,
+                    raw_motion_target_fps=args.raw_motion_target_fps,
+                    raw_motion_extended=args.raw_motion_extended,
                 )
                 print(ok)
             else:
@@ -674,7 +717,8 @@ if __name__ == "__main__":
                     output_root=args.out,
                     static_cam=False,  # 或 True，根据需要
                 )
-                joblib.dump(ok, '/home/cxm/GVHMR/outputs/result.pkl')
+                Path(args.out).mkdir(parents=True, exist_ok=True)
+                joblib.dump(ok, str(Path(args.out) / f'{vid.stem}_result.pkl'))
         except Exception as e:
             Log.error(f"Error processing {vid}: {e}")
             import traceback
