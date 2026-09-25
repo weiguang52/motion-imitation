@@ -26,10 +26,10 @@ from pytorch3d.transforms import quaternion_to_matrix, axis_angle_to_matrix, mat
 import smplx
 try:
     from .raw_motion_export import (resample_values, smpl_global_rotations,
-                                    resample_rotations, estimate_hand_openness, pack_extended)
+                                    resample_rotations, estimate_hand_openness, pack_extended, align_tw_joint_positions, align_tw_rotation_matrices)
 except ImportError:
     from raw_motion_export import (resample_values, smpl_global_rotations,
-                                   resample_rotations, estimate_hand_openness, pack_extended)
+                                   resample_rotations, estimate_hand_openness, pack_extended, align_tw_joint_positions, align_tw_rotation_matrices)
 # GVHMR Imports
 from hmr4d.utils.pylogger import Log
 from hmr4d.configs import register_store_gvhmr
@@ -312,7 +312,7 @@ class GVHMRSystem:
         static_cam=False,
         f_mm=None,
         verbose=False,
-        raw_motion_coord="h1",
+        raw_motion_coord="tw",
         raw_motion_target_fps=20.0,
         raw_motion_extended=False,
     ):
@@ -354,7 +354,7 @@ class GVHMRSystem:
             pred = detach_to_cpu(pred)
         Log.info(f"[TIMING] GVHMR infer:  {time.time()-t0:.3f}s")
 
-        joints = self._extract_pre_retarget_joints(pred, coord=raw_motion_coord)
+        joints = self._extract_pre_retarget_joints(pred, coord="ik_input" if raw_motion_coord == "tw" else raw_motion_coord)
         capture = cv2.VideoCapture(str(video_path))
         source_fps = float(capture.get(cv2.CAP_PROP_FPS))
         capture.release()
@@ -374,8 +374,12 @@ class GVHMRSystem:
                 self.smpl_model.parents.detach().cpu().numpy(),
             )
             rotations = resample_rotations(rotations, source_fps, target_fps)
+            if raw_motion_coord == "tw":
+                rotations = align_tw_rotation_matrices(rotations)
             hands = estimate_hand_openness(str(video_path), len(joints), source_fps, target_fps)
         joints = resample_values(joints, source_fps, target_fps)
+        if raw_motion_coord == "tw":
+            joints = align_tw_joint_positions(joints)
         if len(joints) < 9:
             raise ValueError("tw_retargeting requires at least 9 frames at the export frame rate")
         if raw_motion_extended:
@@ -680,7 +684,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, default="outputs/batch_demo")
     parser.add_argument("--raw-motion-only", action="store_true", help="只输出重定向前的 SMPL 关节动作帧 .npy，不运行 H1 IK")
     parser.add_argument("--raw-motion-output-dir", type=str, default="outputs/raw_motion_npy", help="raw motion .npy 输出目录，文件名自动使用时间戳")
-    parser.add_argument("--raw-motion-coord", choices=["ik_input", "h1", "smpl", "v3"], default="ik_input", help="raw motion 坐标系：ik_input/h1=推荐，保存为可视化 rot/H1PinkSolver 的输入并 pelvis 归零；smpl=原始 SMPL 不归零；v3=旧 V3/Z-up 调试格式")
+    parser.add_argument("--raw-motion-coord", choices=["tw", "ik_input", "h1", "smpl", "v3"], default="tw", help="tw: aligned for tw_retargeting; ik_input/h1: legacy H1; smpl/v3: debug")
     parser.add_argument("--raw-motion-target-fps", type=float, default=20.0, help="Export FPS; 20 for tw_retargeting, 0 to keep source FPS")
     parser.add_argument("--raw-motion-extended", action="store_true", help="Append ankle/wrist rotation matrices and hand openness")
     args = parser.parse_args()

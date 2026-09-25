@@ -202,7 +202,7 @@ python server_side/run.py \
   --input inputs/test_mp4/imitation_multiple_people_test.mp4 \
   --raw-motion-only \
   --raw-motion-output-dir raw_motion_npy \
-  --raw-motion-coord ik_input
+  --raw-motion-coord tw
 ```
 
 输出文件形如：
@@ -213,16 +213,16 @@ raw_motion_npy/action_imitation_1780000000000.npy
 
 坐标系可选值：
 
-- `ik_input` 或 `h1`：推荐，pelvis 归零，可直接用于 IK/可视化。
+- `tw`: recommended for tw_retargeting; pelvis-relative and robot-facing.
+- `ik_input` or `h1`: legacy H1 orientation, pelvis-relative.
 - `smpl`：原始 SMPL 坐标，不归零。
 - `v3`：旧版 Z-up 调试格式。
 
 #### 可视化导出的 `.npy`
 
-`server_side/npyvisual.py` 可以把单段或合并后的动作文件渲染为骨架动画。运行前将
-脚本顶部的 `path` 改为目标 `.npy` 文件；推荐使用
-`--raw-motion-coord ik_input` 或 `h1` 生成的文件，因为脚本会继续应用供
-H1/可视化使用的坐标旋转。
+`server_side/npyvisual.py` renders the first 29 joints of an exported NPY.
+Set its `path` variable before running it; `tw` mode includes the robot-facing alignment.
+Legacy `ik_input` and `h1` files retain their original orientation.
 
 ```bash
 python server_side/npyvisual.py
@@ -279,7 +279,7 @@ python server_side/action_imitation_server.py \
   --port 8003 \
   --raw-motion-only \
   --raw-motion-output-dir raw_motion_npy \
-  --raw-motion-coord ik_input
+  --raw-motion-coord tw
 ```
 
 启动较慢。出现“模型加载完成”和服务监听信息后才表示可以接收请求。
@@ -322,7 +322,7 @@ ZMQ_STREAM_TOPIC=robot_robot_001_action_imitation_camera_left \
 python server_side/action_imitation_server.py \
   --raw-motion-only \
   --raw-motion-output-dir raw_motion_npy \
-  --raw-motion-coord ik_input
+  --raw-motion-coord tw
 ```
 
 Agent 必须在发送该任务的视频帧前登记 session；重复登记相同
@@ -460,7 +460,7 @@ exported frames. Set `--raw-motion-target-fps 0` to keep the source frame rate.
 
 ```bash
 python server_side/run.py --input inputs/test_mp4/your_video.mp4 \
-  --raw-motion-only --raw-motion-coord ik_input \
+  --raw-motion-only --raw-motion-coord tw \
   --raw-motion-target-fps 20 --raw-motion-extended \
   --raw-motion-output-dir raw_motion_npy
 ```
@@ -470,13 +470,18 @@ The ordinary export has shape `(T,29,3)`. `--raw-motion-extended` writes
 
 | Rows | Data |
 | --- | --- |
-| 0:29 | SMPL joint positions, pelvis-relative with `ik_input` |
+| 0:29 | SMPL joint positions, pelvis-relative with `tw` |
 | 29:32 | Left ankle world rotation matrix, three rows |
 | 32:35 | Right ankle world rotation matrix, three rows |
 | 35:38 | Left wrist world rotation matrix, three rows |
 | 38:41 | Right wrist world rotation matrix, three rows |
 | 41 | Left hand `[openness, detection_confidence, 0]` |
 | 42 | Right hand `[openness, detection_confidence, 0]` |
+
+The `tw` mode applies a 180-degree SMPL Y-up yaw before the native (z,x,y)
+permutation, aligning human forward/left axes with the fixed-base robot URDF.
+Use `ik_input` only for the legacy H1 orientation. Existing NPY files made
+with `ik_input` need this alignment before tw_retargeting.
 
 Rotation matrices are derived from the SMPL kinematic chain and use the same
 source axes as the exported joints. Hand openness is estimated from visible
@@ -485,9 +490,6 @@ not detected, openness is 0.5 and confidence is 0. These hand estimates are
 not SMPL predictions or reliable grasp measurements. Install `mediapipe==0.10.14`
 to enable the extended export. The native retargeter reads only the first 22
 joint rows, so the appended rows do not affect its output. The existing
-`server_side/npyvisual.py` displays the first 29 rows of an extended file.
-
-The server accepts the same `--raw-motion-target-fps` and
-`--raw-motion-extended` flags, or the `RAW_MOTION_TARGET_FPS` and
-`RAW_MOTION_EXTENDED` environment variables. Full video inference still
-requires the checkpoints and licensed SMPL/SMPL-X assets listed above.
+`server_side/npyvisual.py` renders the first 29 joints of an exported NPY.
+Set its `path` variable before running it; `tw` mode includes the robot-facing alignment.
+Legacy `ik_input` and `h1` files retain their original orientation.

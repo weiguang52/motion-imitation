@@ -131,3 +131,25 @@ def pack_extended(joints: np.ndarray, rotations: np.ndarray,
     if not np.isfinite(output).all():
         raise ValueError('Export contains non-finite values')
     return np.ascontiguousarray(output)
+
+
+# GVHMR and the robot URDF use opposite horizontal facing/left axes after the
+# existing (z, x, y) Y-up -> Z-up permutation in tw_retargeting. A 180-degree
+# yaw in the SMPL Y-up frame aligns both the torso forward and left axes.
+TW_ALIGNMENT_MATRIX = np.diag([-1.0, 1.0, -1.0]).astype(np.float32)
+
+
+def align_tw_joint_positions(joints: np.ndarray) -> np.ndarray:
+    """Rotate SMPL Y-up positions into tw_retargeting's robot-facing convention."""
+    joints = np.asarray(joints, dtype=np.float32)
+    if joints.ndim != 3 or joints.shape[-1] != 3:
+        raise ValueError('Expected joint positions shaped (T,J,3)')
+    return np.ascontiguousarray(joints @ TW_ALIGNMENT_MATRIX, dtype=np.float32)
+
+
+def align_tw_rotation_matrices(rotations: np.ndarray) -> np.ndarray:
+    """Apply the same world-frame yaw to the appended ankle/wrist rotations."""
+    rotations = np.asarray(rotations, dtype=np.float32)
+    if rotations.ndim != 4 or rotations.shape[-2:] != (3, 3):
+        raise ValueError('Expected rotation matrices shaped (T,J,3,3)')
+    return np.ascontiguousarray(TW_ALIGNMENT_MATRIX @ rotations, dtype=np.float32)

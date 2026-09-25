@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from raw_motion_export import (sample_times, resample_values, smpl_global_rotations,
-                               resample_rotations, pack_extended)
+                               resample_rotations, pack_extended, align_tw_joint_positions, align_tw_rotation_matrices)
 
 class RawMotionExportTest(unittest.TestCase):
     def test_resampling_and_extended_contract(self):
@@ -40,6 +40,25 @@ class RawMotionExportTest(unittest.TestCase):
         expected = Rotation.from_euler('z', 90, degrees=True).as_matrix() @ Rotation.from_euler('x', 45, degrees=True).as_matrix()
         np.testing.assert_allclose(matrices[:, 0], np.broadcast_to(expected, (2, 3, 3)), atol=1e-6)
         np.testing.assert_allclose(matrices @ matrices.transpose(0, 1, 3, 2), np.broadcast_to(np.eye(3), (2, 4, 3, 3)), atol=1e-6)
+
+
+class TwAlignmentTest(unittest.TestCase):
+    def test_robot_forward_and_left_axes(self):
+        joints = np.zeros((2, 29, 3), dtype=np.float32)
+        joints[:, 3, 1] = 0.5
+        joints[:, 13] = [-0.2, 0.8, 0.0]
+        joints[:, 14] = [0.2, 0.8, 0.0]
+        aligned = align_tw_joint_positions(joints)
+        up_axis = Rotation.from_quat([0.5, 0.5, 0.5, 0.5]).as_matrix()
+        xyz = aligned @ up_axis.T
+        right = xyz[0, 13] - xyz[0, 14]
+        up = (xyz[0, 13] + xyz[0, 14]) / 2 - xyz[0, 3]
+        np.testing.assert_allclose(right / np.linalg.norm(right), [0, 1, 0], atol=1e-6)
+        np.testing.assert_allclose(np.cross(right, up) / np.linalg.norm(np.cross(right, up)), [1, 0, 0], atol=1e-6)
+        matrices = np.broadcast_to(np.eye(3), (2, 4, 3, 3))
+        rotated = align_tw_rotation_matrices(matrices)
+        np.testing.assert_allclose(rotated[0, 0], np.diag([-1, 1, -1]))
+        np.testing.assert_allclose(np.linalg.det(rotated), 1, atol=1e-6)
 
 if __name__ == '__main__':
     unittest.main()

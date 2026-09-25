@@ -45,9 +45,9 @@ _PRE_PARSER.add_argument(
 )
 _PRE_PARSER.add_argument(
     "--raw-motion-coord",
-    choices=["ik_input", "h1", "smpl", "v3"],
-    default=os.getenv("RAW_MOTION_COORD", "ik_input"),
-    help="raw motion 坐标系：ik_input/h1=推荐，保存为可视化 rot/H1PinkSolver 的输入并 pelvis 归零；smpl=原始 SMPL 不归零；v3=旧 V3/Z-up 调试格式",
+    choices=["tw", "ik_input", "h1", "smpl", "v3"],
+    default=os.getenv("RAW_MOTION_COORD", "tw"),
+    help="tw: aligned for tw_retargeting; ik_input/h1: legacy H1; smpl/v3: debug",
 )
 _PRE_PARSER.add_argument("--raw-motion-target-fps", type=float, default=float(os.getenv("RAW_MOTION_TARGET_FPS", "20")))
 _PRE_PARSER.add_argument("--raw-motion-extended", action="store_true", default=os.getenv("RAW_MOTION_EXTENDED", "0").lower() in {"1", "true", "yes"})
@@ -952,7 +952,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8003)
     parser.add_argument("--raw-motion-only", action="store_true", default=RAW_MOTION_ONLY, help="只保存重定向前的 SMPL 关节动作帧 .npy，不运行 H1 IK")
     parser.add_argument("--raw-motion-output-dir", default=RAW_MOTION_OUTPUT_DIR, help="raw motion .npy 输出目录，文件名自动使用时间戳")
-    parser.add_argument("--raw-motion-coord", choices=["ik_input", "h1", "smpl", "v3"], default=RAW_MOTION_COORD, help="raw motion 坐标系：ik_input/h1=推荐，保存为可视化 rot/H1PinkSolver 的输入并 pelvis 归零；smpl=原始 SMPL 不归零；v3=旧 V3/Z-up 调试格式")
+    parser.add_argument("--raw-motion-coord", choices=["tw", "ik_input", "h1", "smpl", "v3"], default=RAW_MOTION_COORD, help="tw: aligned for tw_retargeting; ik_input/h1: legacy H1; smpl/v3: debug")
     parser.add_argument("--raw-motion-target-fps", type=float, default=RAW_MOTION_TARGET_FPS)
     parser.add_argument("--raw-motion-extended", action="store_true", default=RAW_MOTION_EXTENDED)
     args = parser.parse_args()
