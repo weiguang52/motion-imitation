@@ -493,3 +493,98 @@ joint rows, so the appended rows do not affect its output. The existing
 `server_side/npyvisual.py` renders the first 29 joints of an exported NPY.
 Set its `path` variable before running it; `tw` mode includes the robot-facing alignment.
 Legacy `ik_input` and `h1` files retain their original orientation.
+
+## Internet video dataset export (schema v1)
+
+The dataset mode exports one HumanML3D-compatible pair from each video, plus
+aligned training annotations. Run it from the repository root with the
+data-disk environment and the HumanML3D conversion code/target offsets already
+installed on the data disk:
+
+```bash
+python server_side/run.py --input /path/on/data-disk/clip.mp4 \
+  --raw-motion-only --raw-motion-target-fps 20 \
+  --dataset-output-dir /root/gpufree-data/tmp/internet-motion-v1 \
+  --humanml-code-dir /root/gpufree-data/apps/humanml3d-code \
+  --humanml-offsets-path /root/gpufree-data/models/humanml3d/target_offsets.npy \
+  --source-uri 'oss://bucket/source/clip.mp4' --source-license 'CC BY 4.0'
+```
+
+The output uses the same stable sample ID in four directories:
+`new_joints/<id>.npy` is float32 `(N,22,3)` at 20 FPS and can be passed
+directly to native `tw_retargeting`; `new_joint_vecs/<id>.npy` is float32
+`(N,263)` in HumanML3D's RIC representation;
+`annotations/<id>.npz` contains the wrist/ankle rotations, hand openness,
+contact labels, support state, confidence, active side and SMPL body shape;
+`metadata/<id>.json` records schema, coordinates, source hash, license,
+frame mapping, SHA256, caption events and transition intervals. All arrays
+use the same frame index. One source frame is consumed by velocity encoding,
+so N equals the 20 FPS source length minus one.
+
+`contact_label`, `support_state`, `active_side` and 3D confidence are
+initially unknown (`-1`), while caption events and transition intervals
+start empty. These fields require video-grounded review; the HumanML3D
+velocity-based four foot flags in the 263D vector are not proof of contact or
+support. `confidence_2d_keypoints` is the mean ViTPose score rather than
+calibrated 3D confidence. SMPL betas are estimates, not measured body shape.
+The appended rotations are stored in the reflected, first-heading-normalized
+HumanML coordinate system; they do not participate in native retargeting.
+
+Validate each sample before uploading it to OSS:
+
+```bash
+python server_side/validate_dataset.py /root/gpufree-data/tmp/internet-motion-v1 <id>
+```
+
+Keep downloaded videos and generated arrays in OSS for durable storage. The
+data-disk output directory is a temporary staging area for validation and
+upload; never write dataset media or environments to the system disk. The
+converter uses the separately installed HumanML3D code and `target_offsets.npy`,
+which are not part of this Git repository.
+
+For review, the annotation NPZ also includes `contact_candidate`,
+`support_candidate`, `active_side_candidate`, and `transition_score`.
+These are simple kinematic suggestions and must not be treated as validated
+contact, support, language, or transition labels. They leave seated and
+occluded support unresolved. Human review or a scene-aware model must fill
+the authoritative fields and timestamped language events before training.
+
+Validated internet samples with source URI and license can be uploaded to an
+OSS staging prefix. The publisher reads each object back and checks SHA256,
+then writes a per-sample catalog object last:
+
+```bash
+python server_side/publish_dataset.py /root/gpufree-data/tmp/internet-motion-v1 <id> \
+  oss://lighto1-motion-dataset/internet-videos/processed/v1/staging \
+  --ossutil /root/gpufree-data/tools/ossutil-2.4.0-linux-amd64/ossutil \
+  --config /root/gpufree-data/config/ossutilconfig
+```
+
+For Wikimedia Commons clips, `--source-uri` names the original OSS clip,
+`--source-object-sha256` records that OSS object's checksum, and
+`--parent-source-uri` names the original media asset. If a fragmented clip
+must be remuxed for PyAV/GVHMR, pass the remuxed path to `--input`; the
+metadata separately records its `processing_video_sha256`. Retain the source
+page and license from the source manifest. Remux only on the data disk.
+
+To process an OSS clip from its provenance manifest in one command, use
+`server_side/process_oss_clip.py`. It verifies the source SHA256, remuxes a
+fragmented MP4 inside a temporary data-disk directory, reconstructs the
+motion, validates the output, uploads to OSS staging, and removes temporary
+media and arrays when finished:
+
+```bash
+python server_side/process_oss_clip.py \
+  --manifest-uri oss://lighto1-motion-dataset/internet-videos/wikimedia-commons/pilot-2026-09-26/clips/manifest.json \
+  --clip-uri oss://lighto1-motion-dataset/internet-videos/wikimedia-commons/pilot-2026-09-26/clips/97994423-0000-0007.mp4 \
+  --scratch-parent /root/gpufree-data/tmp \
+  --destination oss://lighto1-motion-dataset/internet-videos/processed/v1/staging \
+  --ossutil /root/gpufree-data/tools/ossutil-2.4.0-linux-amd64/ossutil \
+  --config /root/gpufree-data/config/ossutilconfig \
+  --humanml-code-dir /root/gpufree-data/apps/humanml3d-code \
+  --humanml-offsets-path /root/gpufree-data/models/humanml3d/target_offsets.npy
+```
+
+Omit `--destination` to validate the full reconstruction path without
+publishing the sample. Publication is idempotent: an existing sample with a
+different checksum is rejected rather than overwritten.

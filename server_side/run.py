@@ -315,6 +315,14 @@ class GVHMRSystem:
         raw_motion_coord="tw",
         raw_motion_target_fps=20.0,
         raw_motion_extended=False,
+        dataset_output_dir=None,
+        humanml_code_dir="/root/gpufree-data/apps/humanml3d-code",
+        humanml_offsets_path="/root/gpufree-data/models/humanml3d/target_offsets.npy",
+        source_uri=None,
+        source_license=None,
+        source_object_sha256=None,
+        parent_source_uri=None,
+        source_page=None,
     ):
         """
         只运行到 GVHMR -> SMPL joints，不做 H1 IK 重定向。
@@ -363,6 +371,36 @@ class GVHMRSystem:
         target_fps = float(raw_motion_target_fps or source_fps)
         if not np.isfinite(target_fps) or target_fps <= 0:
             raise ValueError("raw_motion_target_fps must be positive")
+        if dataset_output_dir is not None and not np.isclose(target_fps, 20.0):
+            raise ValueError("Dataset mode requires 20 FPS for HumanML3D and tw_retargeting")
+        if dataset_output_dir is not None:
+            try:
+                from .dataset_export import build_sample, write_sample
+            except ImportError:
+                from dataset_export import build_sample, write_sample
+            params = pred["smpl_params_global"]
+            with torch.no_grad():
+                world = self.smpl_model(
+                    body_pose=torch.nn.functional.pad(
+                        params["body_pose"][:, :63].float().to(self.device), (0, 6)),
+                    global_orient=params["global_orient"].float().to(self.device),
+                    transl=params["transl"].float().to(self.device),
+                    betas=params["betas"][:, :10].float().to(self.device),
+                ).joints[:, :22].cpu().numpy()
+            rotations = smpl_global_rotations(
+                params["global_orient"].numpy(), params["body_pose"].numpy(),
+                self.smpl_model.parents.detach().cpu().numpy())
+            hands = estimate_hand_openness(str(video_path), len(world), source_fps, target_fps)
+            ordinary, vec, labels = build_sample(
+                world, source_fps, target_fps, rotations, hands, cache["vitpose"],
+                params["betas"], humanml_code_dir, humanml_offsets_path)
+            result = write_sample(
+                dataset_output_dir, str(video_path), ordinary, vec, labels,
+                source_fps, target_fps, source_uri=source_uri, license_id=source_license,
+                source_object_sha256=source_object_sha256,
+                parent_source_uri=parent_source_uri, source_page=source_page)
+            Log.info(f"[Dataset] Saved {result['sample_id']} with {result['frames']} aligned frames")
+            return {"status": "success", "format": "internet_motion_v1", **result}
         if raw_motion_extended:
             params = pred["smpl_params_global"]
             global_orient = params["global_orient"]
@@ -687,9 +725,21 @@ if __name__ == "__main__":
     parser.add_argument("--raw-motion-coord", choices=["tw", "ik_input", "h1", "smpl", "v3"], default="tw", help="tw: aligned for tw_retargeting; ik_input/h1: legacy H1; smpl/v3: debug")
     parser.add_argument("--raw-motion-target-fps", type=float, default=20.0, help="Export FPS; 20 for tw_retargeting, 0 to keep source FPS")
     parser.add_argument("--raw-motion-extended", action="store_true", help="Append ankle/wrist rotation matrices and hand openness")
+    parser.add_argument("--dataset-output-dir", default=None, help="Write HumanML3D joints/vectors and training annotations")
+    parser.add_argument("--humanml-code-dir", default="/root/gpufree-data/apps/humanml3d-code")
+    parser.add_argument("--humanml-offsets-path", default="/root/gpufree-data/models/humanml3d/target_offsets.npy")
+    parser.add_argument("--source-uri", default=None)
+    parser.add_argument("--source-license", default=None)
+    parser.add_argument("--source-object-sha256", default=None)
+    parser.add_argument("--parent-source-uri", default=None)
+    parser.add_argument("--source-page", default=None)
     args = parser.parse_args()
+    if args.dataset_output_dir and not args.raw_motion_only:
+        parser.error("--dataset-output-dir requires --raw-motion-only")
+    if args.dataset_output_dir and not np.isclose(args.raw_motion_target_fps, 20.0):
+        parser.error("Dataset mode requires --raw-motion-target-fps 20")
 
-    # 1. 实例化系统 (此时执行冷启动，加载所有模型，比较慢)
+    # 1. Load the reconstruction model once for all inputs.
     gvhmr_sys = GVHMRSystem(load_h1_optimizer=not args.raw_motion_only)
 
     # 2. 准备视频列表
@@ -712,6 +762,14 @@ if __name__ == "__main__":
                     raw_motion_coord=args.raw_motion_coord,
                     raw_motion_target_fps=args.raw_motion_target_fps,
                     raw_motion_extended=args.raw_motion_extended,
+                    dataset_output_dir=args.dataset_output_dir,
+                    humanml_code_dir=args.humanml_code_dir,
+                    humanml_offsets_path=args.humanml_offsets_path,
+                    source_uri=args.source_uri,
+                    source_license=args.source_license,
+                    source_object_sha256=args.source_object_sha256,
+                    parent_source_uri=args.parent_source_uri,
+                    source_page=args.source_page,
                 )
                 print(ok)
             else:
