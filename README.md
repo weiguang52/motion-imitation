@@ -588,3 +588,54 @@ python server_side/process_oss_clip.py \
 Omit `--destination` to validate the full reconstruction path without
 publishing the sample. Publication is idempotent: an existing sample with a
 different checksum is rejected rather than overwritten.
+
+### Reuse one GVHMR model across OSS clips
+
+`process_oss_clip.py` now accepts repeated `--clip-uri` arguments. It starts
+one `dataset_batch_worker.py` process, loads GVHMR once, then streams clips
+to that worker sequentially. Each clip is downloaded, checked, remuxed,
+exported, validated and published before its temporary video and arrays are
+removed from the data disk. Omit `--clip-uri` to process every record in the
+provided clip manifest. A failed clip is reported and the remaining clips
+continue; the command exits with code 2 if any clip failed. The JSON summary
+includes `model_loads`, `completed` and `errors`.
+
+To process only two selected clips, repeat the option:
+
+```bash
+python server_side/process_oss_clip.py \
+  --manifest-uri oss://lighto1-motion-dataset/internet-videos/wikimedia-commons/pilot-2026-09-26/clips/manifest.json \
+  --clip-uri oss://lighto1-motion-dataset/internet-videos/wikimedia-commons/pilot-2026-09-26/clips/97994423-0000-0007.mp4 \
+  --clip-uri oss://lighto1-motion-dataset/internet-videos/wikimedia-commons/pilot-2026-09-26/clips/147217317-0009-0027.mp4 \
+  --scratch-parent /root/gpufree-data/tmp \
+  --destination oss://lighto1-motion-dataset/internet-videos/processed/v1/staging \
+  --ossutil /root/gpufree-data/tools/ossutil-2.4.0-linux-amd64/ossutil \
+  --config /root/gpufree-data/config/ossutilconfig \
+  --humanml-code-dir /root/gpufree-data/apps/humanml3d-code \
+  --humanml-offsets-path /root/gpufree-data/models/humanml3d/target_offsets.npy
+```
+
+### Continuous licensed video ingestion
+
+`server_side/continuous_commons.py` discovers suitably licensed Wikimedia Commons videos,
+streams originals and short person-containing clips to OSS, and sends each new clip
+manifest through the batch processor. It includes standing, chair, and floor
+activity search terms. Each output remains in the OSS `staging` prefix for review.
+The restartable ingest state is saved to
+`oss://lighto1-motion-dataset/internet-videos/processed/v1/ingest-state.json`.
+Failed clips are retried up to three times before being quarantined in that state.
+Only temporary processing files are placed on the data disk and are deleted after
+each batch. The script uses the configured data-disk paths and local port 10808 proxy;
+set these constants for another deployment. Keep the OSS credentials in the
+external `ossutil` config, outside this repository.
+
+For the current server, run it in tmux and keep logs on the data disk:
+
+```bash
+tmux new-session -d -s internet_motion_continuous \
+  'while true; do /root/gpufree-data/conda-envs/motion-imitation/bin/python -u /root/gpufree-data/apps/motion-imitation/server_side/continuous_commons.py >> /root/gpufree-data/logs/internet-motion-continuous.log 2>&1; sleep 30; done'
+```
+
+The running server session was started before this script moved into the repository.
+Its active copy is `/root/gpufree-data/tools/continuous_commons.py` and has the same
+processing logic.
